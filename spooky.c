@@ -57,7 +57,7 @@ void SpookyHashShort(
         {
             c += u.p64[0];
             d += u.p64[1];
-            SpookyHashShortMix(a,b,c,d);
+            SpookyHashShortMix(&a,&b,&c,&d);
             a += u.p64[2];
             b += u.p64[3];
         }
@@ -67,7 +67,7 @@ void SpookyHashShort(
         {
             c += u.p64[0];
             d += u.p64[1];
-            SpookyHashShortMix(a,b,c,d);
+            SpookyHashShortMix(&a,&b,&c,&d);
             u.p64 += 2;
             remainder -= 16;
         }
@@ -116,7 +116,7 @@ void SpookyHashShort(
         c += sc_const;
         d += sc_const;
     }
-    SpookyHashShortEnd(a,b,c,d);
+    SpookyHashShortEnd(&a,&b,&c,&d);
     *hash1 = a;
     *hash2 = b;
 }
@@ -160,7 +160,7 @@ void SpookyHashHash128(
     {
         while (u.p64 < end)
         { 
-            SpookyHashMix(u.p64, h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
+            SpookyHashMix(u.p64, &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
 	    u.p64 += sc_numVars;
         }
     }
@@ -169,7 +169,7 @@ void SpookyHashHash128(
         while (u.p64 < end)
         {
             memcpy(buf, u.p64, sc_blockSize);
-            SpookyHashMix(buf, h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
+            SpookyHashMix(buf, &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
 	    u.p64 += sc_numVars;
         }
     }
@@ -181,7 +181,7 @@ void SpookyHashHash128(
     ((uint8 *)buf)[sc_blockSize-1] = remainder;
     
     // do some final mixing 
-    SpookyHashEnd(buf, h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
+    SpookyHashEnd(buf, &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
     *hash1 = h0;
     *hash2 = h1;
 }
@@ -250,9 +250,9 @@ void SpookyHashUpdate(const void *message, size_t length, spooky_state *state)
     {
         uint8 prefix = sc_bufSize - state->m_remainder;
         memcpy(&(((uint8 *)(state->m_data))[state->m_remainder]), message, prefix);
-        u.p64 = m_data;
-        SpookyHashMix(u.p64, h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
-        SpookyHashMix(&u.p64[sc_numVars], h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
+        u.p64 = state->m_data;
+        SpookyHashMix(u.p64, &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
+        SpookyHashMix(&u.p64[sc_numVars], &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
         u.p8 = ((const uint8 *)message) + prefix;
         length -= prefix;
     }
@@ -268,7 +268,7 @@ void SpookyHashUpdate(const void *message, size_t length, spooky_state *state)
     {
         while (u.p64 < end)
         { 
-            SpookyHashMix(u.p64, h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
+            SpookyHashMix(u.p64, &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
 	    u.p64 += sc_numVars;
         }
     }
@@ -277,7 +277,7 @@ void SpookyHashUpdate(const void *message, size_t length, spooky_state *state)
         while (u.p64 < end)
         { 
             memcpy(state->m_data, u.p8, sc_blockSize);
-            SpookyHashMix(state->m_data, h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
+            SpookyHashMix(state->m_data, &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
 	    u.p64 += sc_numVars;
         }
     }
@@ -333,7 +333,7 @@ void SpookyHashFinal(uint64 *hash1, uint64 *hash2, spooky_state *state)
     if (remainder >= sc_blockSize)
     {
         // m_data can contain two blocks; handle any whole first block
-        SpookyHashMix(data, h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
+        SpookyHashMix(data, &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
         data += sc_numVars;
         remainder -= sc_blockSize;
     }
@@ -344,7 +344,7 @@ void SpookyHashFinal(uint64 *hash1, uint64 *hash2, spooky_state *state)
     ((uint8 *)data)[sc_blockSize-1] = remainder;
     
     // do some final mixing
-    SpookyHashEnd(data, h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
+    SpookyHashEnd(data, &h0,&h1,&h2,&h3,&h4,&h5,&h6,&h7,&h8,&h9,&h10,&h11);
 
     *hash1 = h0;
     *hash2 = h1;
