@@ -6,6 +6,9 @@
 #include <errno.h>
 #include "bitmap.h"
 
+#include "MurmurHash3.h"
+#include "spooky.h"
+
 /**
  * We use a magic header to identify the bloom filters.
  */
@@ -55,7 +58,7 @@ int bf_from_bitmap(bloom_bitmap *map, uint32_t k_num, int new_filter, bloom_bloo
  * @arg key The key to add
  * @returns 1 if the key was added, 0 if present. Negative on failure.
  */
-int bf_add(bloom_bloomfilter *filter, char* key, uint64_t len);
+int bf_add(bloom_bloomfilter *filter, const void* key, uint64_t len);
 
 /**
  * Checks the filter for a key
@@ -63,7 +66,7 @@ int bf_add(bloom_bloomfilter *filter, char* key, uint64_t len);
  * @arg key The key to check
  * @returns 1 if present, 0 if not present, negative on error.
  */
-int bf_contains(bloom_bloomfilter *filter, char* key, uint64_t len);
+int bf_contains(bloom_bloomfilter *filter, const void* key, uint64_t len);
 
 /**
  * Returns the size of the bloom filter in item count
@@ -89,7 +92,7 @@ int bf_close(bloom_bloomfilter *filter);
  * @arg key The key to hash
  * @arg hashes Array to write to
  */
-void bf_compute_hashes(uint32_t k_num, char *key, uint64_t len, uint64_t *hashes);
+void bf_compute_hashes(uint32_t k_num, const void *key, uint64_t len, uint64_t *hashes);
 
 /*
  * Utility methods for computing parameters

@@ -56,7 +56,7 @@ int sbf_from_filters(bloom_sbf_params *params,
  * @arg key The key to add
  * @returns 1 if the key was added, 0 if present. Negative on failure.
  */
-int sbf_add(bloom_sbf *sbf, char* key, uint64_t len) {
+int sbf_add(bloom_sbf *sbf, const void* key, uint64_t len) {
     // Check if the key is contained first.
     if (sbf_contains(sbf, key, len) == 1) {
         return 0;
@@ -86,7 +86,7 @@ int sbf_add(bloom_sbf *sbf, char* key, uint64_t len) {
  * @arg key The key to check
  * @returns 1 if present, 0 if not present, negative on error.
  */
-int sbf_contains(bloom_sbf *sbf, char* key, uint64_t len) {
+int sbf_contains(bloom_sbf *sbf, const void* key, uint64_t len) {
     // Check each filter from largest to smallest
     int res;
     for (uint32_t i=0;i<sbf->num_filters;i++) {

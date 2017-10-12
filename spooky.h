@@ -286,3 +286,5 @@ static inline void SpookyHashShortEnd(uint64_t* h0, uint64_t* h1,
         size_t length,        // length of message (in bytes)
         uint64 *hash1,        // in/out: in the seed, out the hash value
         uint64 *hash2);       // in/out: in the seed, out the hash value
+
+void SpookyHash128(const void *key, size_t len, uint64 seed1, uint64 seed2, uint64 *hash1, uint64 *hash2);

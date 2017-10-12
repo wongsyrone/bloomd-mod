@@ -6,10 +6,11 @@
 #include <fcntl.h>
 #include <strings.h>
 #include <errno.h>
-#include <syslog.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "bitmap.h"
+
+#include "utils.h"
 
 /* Static declarations */
 static void* alloc_dirty_page_bitmap(uint64_t len);
@@ -65,7 +66,7 @@ int bitmap_from_file(int fileno, uint64_t len, bitmap_mode mode, bloom_bitmap *m
 
     // Check for an error, otherwise return
     if (addr == MAP_FAILED) {
-        perror("mmap failed!");
+        LOGE("mmap failed!");
         if (newfileno >= 0) {
             close(newfileno);
         }
@@ -77,11 +78,11 @@ int bitmap_from_file(int fileno, uint64_t len, bitmap_mode mode, bloom_bitmap *m
     if (mode == SHARED) {
         res = madvise(addr, len, MADV_WILLNEED);
         if (res != 0) {
-            perror("Failed to call madvise() [MADV_WILLNEED]");
+            LOGE("Failed to call madvise() [MADV_WILLNEED]");
         }
         res = madvise(addr, len, MADV_RANDOM);
         if (res != 0) {
-            perror("Failed to call madvise() [MADV_RANDOM]");
+            LOGE("Failed to call madvise() [MADV_RANDOM]");
         }
     }
 
@@ -125,7 +126,7 @@ static void* alloc_dirty_page_bitmap(uint64_t len) {
     // Allocate the field
     void* dirty = malloc(field_size);
     if (!dirty) {
-        perror("Failed to allocate dirty page bitfield!");
+        LOGE("Failed to allocate dirty page bitfield!");
         return NULL;
     }
 
@@ -146,7 +147,7 @@ static int fill_buffer(int fileno, unsigned char* buf, uint64_t len) {
         if (more == 0)
             break;
         else if (more < 0 && errno != EINTR) {
-            perror("Failed to fill the bitmap buffer!");
+            LOGE("Failed to fill the bitmap buffer!");
             return -errno;
         } else
             total_read += more;
@@ -178,7 +179,7 @@ int bitmap_from_filename(char* filename, uint64_t len, int create, bitmap_mode m
     // Open the file
     int fileno = open(filename, flags, 0644);
     if (fileno == -1) {
-        perror("open failed on bitmap!");
+        LOGE("open failed on bitmap!");
         return -errno;
     }
 
@@ -188,7 +189,7 @@ int bitmap_from_filename(char* filename, uint64_t len, int create, bitmap_mode m
         struct stat buf;
         int res = fstat(fileno, &buf);
         if (res != 0) {
-            perror("fstat failed on bitmap!");
+            LOGE("fstat failed on bitmap!");
             close(fileno);
             return -errno;
         }
@@ -199,7 +200,7 @@ int bitmap_from_filename(char* filename, uint64_t len, int create, bitmap_mode m
             extra_flags |= NEW_BITMAP;
             res = ftruncate(fileno, len);
             if (res != 0) {
-                perror("ftrunctate failed on the bitmap!");
+                LOGE("ftrunctate failed on the bitmap!");
                 close(fileno);
                 return -errno;
             }
@@ -207,7 +208,7 @@ int bitmap_from_filename(char* filename, uint64_t len, int create, bitmap_mode m
         // Log an error if we are trying to change the
         // size of a file that has non-zero length
         } else if ((uint64_t)buf.st_size != len) {
-            syslog(LOG_ERR, "File size does not match length but is already truncated!");
+            LOGE("File size does not match length but is already truncated!");
             close(fileno);
             return -1;
         }
@@ -221,8 +222,8 @@ int bitmap_from_filename(char* filename, uint64_t len, int create, bitmap_mode m
 
     // Delete the file if we created it and had an error
     if (res && extra_flags & NEW_BITMAP && unlink(filename)) {
-        perror("unlink failed!");
-        syslog(LOG_ERR, "Failed to unlink new file %s", filename);
+        LOGE("unlink failed!");
+        LOGE("Failed to unlink new file %s", filename);
     }
     return res;
 }
@@ -282,7 +283,7 @@ static int flush_dirty_pages(bloom_bitmap *map) {
      */
     void *new_dirty = alloc_dirty_page_bitmap(map->size);
     if (!new_dirty) {
-        syslog(LOG_ERR, "Failed to allocate new dirty page bitmap!");
+        LOGE("Failed to allocate new dirty page bitmap!");
         return -1;
     }
     unsigned char* dirty_pages = map->dirty_pages;

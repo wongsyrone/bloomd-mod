@@ -3,17 +3,14 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
-#include <syslog.h>
 #include "bloom.h"
 
+#include "utils.h"
 /*
  * Static definitions
  */
 // Vaguely like CBLOOMDD
 #define MAGIC_HEADER  ((uint32_t)0xCB1005DD)
-extern void MurmurHash3_x64_128(const void * key, const int len, const uint32_t seed, void *out);
-extern void SpookyHash128(const void *key, size_t len, uint64_t seed1, uint64_t seed2,
-        uint64_t *hash1, uint64_t *hash2);
 
 /**
  * Creates a new bloom filter using a given bitmap and k-value.
@@ -57,7 +54,7 @@ int bf_from_bitmap(bloom_bitmap *map, uint32_t k_num, int new_filter, bloom_bloo
 
     // Check for the header if not new
     } else if (filter->header->magic != MAGIC_HEADER) {
-        syslog(LOG_ERR, "Magic byte for bloom filter is wrong! Aborting load.");
+        LOGE("Magic byte for bloom filter is wrong! Aborting load.");
         return -1;
     }
 
@@ -103,7 +100,7 @@ static int bf_internal_contains(bloom_bloomfilter *filter, uint64_t *hashes) {
  * @arg key The key to add
  * @returns 1 if the key was added, 0 if present. Negative on failure.
  */
-int bf_add(bloom_bloomfilter *filter, char* key, uint64_t len) {
+int bf_add(bloom_bloomfilter *filter, const void* key, uint64_t len) {
     // Allocate the hash space
     uint64_t *hashes = alloca(filter->header->k_num * sizeof(uint64_t));
 
@@ -139,7 +136,7 @@ int bf_add(bloom_bloomfilter *filter, char* key, uint64_t len) {
  * @arg key The key to check
  * @returns 1 if present, 0 if not present, negative on error.
  */
-int bf_contains(bloom_bloomfilter *filter, char* key, uint64_t len) {
+int bf_contains(bloom_bloomfilter *filter, const void* key, uint64_t len) {
     // Allocate the hash space
     uint64_t *hashes = alloca(filter->header->k_num * sizeof(uint64_t));
 
@@ -286,7 +283,7 @@ int bf_ideal_k_num(bloom_filter_params *params) {
 }
 
 // Computes our hashes
-void bf_compute_hashes(uint32_t k_num, char *key, uint64_t len, uint64_t *hashes) {
+void bf_compute_hashes(uint32_t k_num, const void *key, uint64_t len, uint64_t *hashes) {
     /**
      * We use the results of
      * 'Less Hashing, Same Performance: Building a Better Bloom Filter'

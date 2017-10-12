@@ -81,7 +81,7 @@ int sbf_from_filters(bloom_sbf_params *params,
  * @arg key The key to add
  * @returns 1 if the key was added, 0 if present. Negative on failure.
  */
-int sbf_add(bloom_sbf *sbf, char* key, uint64_t len);
+int sbf_add(bloom_sbf *sbf, const void* key, uint64_t len);
 
 /**
  * Checks the filter for a key
@@ -89,7 +89,7 @@ int sbf_add(bloom_sbf *sbf, char* key, uint64_t len);
  * @arg key The key to check
  * @returns 1 if present, 0 if not present, negative on error.
  */
-int sbf_contains(bloom_sbf *sbf, char* key, uint64_t len);
+int sbf_contains(bloom_sbf *sbf, const void* key, uint64_t len);
 
 /**
  * Returns the size of the bloom filter in item count
